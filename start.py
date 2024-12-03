@@ -115,7 +115,6 @@ def change_wifi_password(new_password):
         print(f"Password berhasil diubah menjadi: {new_password}")
         return True
     else:
-        print(f"respomse: {response.headers}")
         print(f"Gagal mengubah password. Status kode: {response.status_code}")
         return False
 
