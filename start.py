@@ -3,11 +3,14 @@ import random
 import string
 import time
 import subprocess
+import qrcode
+from PIL import Image
 
 # Konfigurasi
 ROUTER_IP = "192.168.0.1"
 PASSWORD_CHANGE_URL = f"http://{ROUTER_IP}/boafrm/formWlEncrypt"
 REBOOT_URL = f"http://{ROUTER_IP}/countDownPage.htm"  # Sesuaikan jika endpoint reboot berbeda
+SSID = "clone" # Ganti dengan SSID Wi-Fi Anda
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Encoding": "gzip, deflate",
@@ -40,7 +43,7 @@ def change_wifi_password(new_password):
         "wpa2ciphersuite2": "aes",
         "wps_clear_configure_by_reg2": "0",
         "wlan_disabled2": "0",
-        "wlan_ssid2": "clone",  # Ganti dengan SSID Wi-Fi Anda
+        "wlan_ssid2": SSID,
         "method2": "4",
         "stanums2": "32",
         "authType2": "open",
@@ -95,6 +98,21 @@ def update_wifi_connection(new_password):
     except subprocess.CalledProcessError as e:
         print(f"Gagal memperbarui koneksi Wi-Fi: {e}")
 
+def print_wifi_qr_in_terminal(ssid, password, hidden=False):
+    wifi_format = f"WIFI:T:WPA;S:{ssid};P:{password};H:{str(hidden).lower()};;"
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=1,  # Ukuran kecil untuk terminal
+        border=2,    # Border yang pas untuk terminal
+    )
+    qr.add_data(wifi_format)
+    qr.make(fit=True)
+
+    # Print QR code ke terminal
+    qr.print_ascii(invert=False)  # invert=False untuk teks putih di latar hitam
+    print("\nQR Code di atas adalah untuk SSID:", ssid)
+
 # Main program
 if __name__ == "__main__":
     while True:
@@ -102,6 +120,10 @@ if __name__ == "__main__":
         if change_wifi_password(new_password):
             reboot_router()  # Restart router setelah password diubah
             update_wifi_connection(new_password)  # Hubungkan ke Wi-Fi baru
+
+
+            # Buat QR Code
+            print_wifi_qr_in_terminal(SSID, new_password)
         
         # Tunggu 24 jam sebelum mengganti password lagi
         print("Menunggu 24 jam...")
