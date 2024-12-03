@@ -5,6 +5,7 @@ import time
 import subprocess
 import qrcode
 from PIL import Image
+from io import BytesIO
 
 # Konfigurasi
 ROUTER_IP = "192.168.0.1"
@@ -25,10 +26,46 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 }
 
+# Fungsi mencari chatcha
+def get_captcha_text():
+    captcha_url = "http://192.168.0.1/boafrm/formLogin"
+    payload = {"topicurl": "setting/getSanvas"}
+
+    response = requests.post(captcha_url, json=payload, headers=HEADERS)
+    if response.status_code == 200:
+        captcha_text = response.text  # Simpan CAPTCHA teks
+        print("CAPTCHA diperoleh:", captcha_text)
+        return captcha_text
+    return None
+
+def login_to_router(username, password, captcha_code):
+    login_url = "http://192.168.0.1/boafrm/formLogin"
+    payload = {
+        "topicurl": "setting/setUserLogin",
+        "username": username,
+        "userpass": password,
+        "checkcode": captcha_code,
+        "userAgent": HEADERS["User-Agent"],
+        "submit-url": "/login.htm",
+    }
+
+    response = requests.post(login_url, json=payload, headers=HEADERS)
+    if response.status_code == 200:
+        print("Login berhasil!")
+        return response.cookies  # Simpan cookie sesi
+    else:
+        print("Gagal login.")
+        print("Status code:", response.status_code)
+        print("Respons:", response.text)
+
+    return None
+
+
 # Fungsi untuk membuat password acak
 def generate_random_password(length=16):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
+
 
 # Fungsi untuk mengganti password Wi-Fi
 def change_wifi_password(new_password):
@@ -78,6 +115,7 @@ def change_wifi_password(new_password):
         print(f"Password berhasil diubah menjadi: {new_password}")
         return True
     else:
+        print(f"respomse: {response.headers}")
         print(f"Gagal mengubah password. Status kode: {response.status_code}")
         return False
 
@@ -116,6 +154,13 @@ def print_wifi_qr_in_terminal(ssid, password, hidden=False):
 # Main program
 if __name__ == "__main__":
     while True:
+        username = "admin"  # Ganti dengan username Anda
+        password = "admin"  # Ganti dengan password Anda
+
+        captcha_code = get_captcha_text();
+        if captcha_code:
+            login_to_router(username, password, captcha_code)
+
         new_password = generate_random_password()
         if change_wifi_password(new_password):
             reboot_router()  # Restart router setelah password diubah
