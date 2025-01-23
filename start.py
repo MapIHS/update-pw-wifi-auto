@@ -170,7 +170,7 @@ def print_wifi_qr_in_terminal(ssid, password, hidden=False):
 if __name__ == "__main__":
     while True:
         username = "admin"  # Ganti dengan username Anda
-        password = "20112005"  # Ganti dengan password Anda
+        password = "admin"  # Ganti dengan password Anda
 
         captcha_code = get_captcha_text()
         if captcha_code:
