@@ -147,7 +147,7 @@ def print_wifi_qr_in_terminal(ssid, password, hidden=False):
     qr.make(fit=True)
 
     # Print QR code ke terminal
-    qr.print_ascii(invert=False)  # invert=False untuk teks putih di latar hitam
+    qr.print_ascii(invert=True)  # invert=False untuk teks putih di latar hitam
     print("\nQR Code di atas adalah untuk SSID:", ssid)
 
 # Main program
@@ -168,7 +168,6 @@ if __name__ == "__main__":
 
             # Buat QR Code
             print_wifi_qr_in_terminal(SSID, new_password)
-        
-        # Tunggu 24 jam sebelum mengganti password lagi
-        print("Menunggu 24 jam...")
-        time.sleep(86400)  # 24 jam dalam detik
+            # Tunggu 24 jam sebelum mengganti password lagi
+            print("Menunggu 24 jam...")
+            time.sleep(86400)  # 24 jam dalam detik
