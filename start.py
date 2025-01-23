@@ -1,3 +1,4 @@
+import platform
 import requests
 import random
 import string
@@ -11,7 +12,7 @@ from io import BytesIO
 ROUTER_IP = "192.168.0.1"
 PASSWORD_CHANGE_URL = f"http://{ROUTER_IP}/boafrm/formWlEncrypt"
 REBOOT_URL = f"http://{ROUTER_IP}/countDownPage.htm"  # Sesuaikan jika endpoint reboot berbeda
-SSID = "clone" # Ganti dengan SSID Wi-Fi Anda
+SSID = "clone"  # Ganti dengan SSID Wi-Fi Anda
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Encoding": "gzip, deflate",
@@ -23,7 +24,7 @@ HEADERS = {
     "Origin": f"http://{ROUTER_IP}",
     "Referer": f"http://{ROUTER_IP}/wlbasic.htm",
     "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 }
 
 # Fungsi mencari chatcha
@@ -60,12 +61,10 @@ def login_to_router(username, password, captcha_code):
 
     return None
 
-
 # Fungsi untuk membuat password acak
 def generate_random_password(length=16):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
-
 
 # Fungsi untuk mengganti password Wi-Fi
 def change_wifi_password(new_password):
@@ -123,17 +122,34 @@ def reboot_router():
     response = requests.get(REBOOT_URL, headers=HEADERS)
     if response.status_code == 200:
         print("Router sedang direboot...")
-        time.sleep(60)  # Tunggu 60 detik agar reboot selesai
+        time.sleep(20)  # Tunggu 20 detik agar reboot selesai
     else:
         print(f"Gagal merestart router. Status kode: {response.status_code}")
 
 def update_wifi_connection(new_password):
     try:
-        # Panggil skrip bash untuk memperbarui koneksi Wi-Fi
-        subprocess.run(["./update_wifi.sh", new_password], check=True)
-        print("Berhasil memperbarui koneksi Wi-Fi di sistem.")
+        if platform.system() == "Windows":
+            # Verify the Wi-Fi profile exists
+            result = subprocess.run(["netsh", "wlan", "show", "profiles"], capture_output=True, text=True)
+            if SSID not in result.stdout:
+                print(f"Wi-Fi profile '{SSID}' does not exist. Please create the profile first.")
+                return
+
+            # Update the Wi-Fi profile with the new password
+            result = subprocess.run(
+                ["netsh", "wlan", "set", "profileparameter", f"name={SSID}", f"keyMaterial={new_password}"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            print("Berhasil memperbarui koneksi Wi-Fi di sistem.")
+        elif platform.system() == "Linux":
+            # Panggil skrip bash untuk memperbarui koneksi Wi-Fi di Linux
+            result = subprocess.run(["./update_wifi.sh", new_password], check=True)
+            print("Berhasil memperbarui koneksi Wi-Fi di sistem.")
     except subprocess.CalledProcessError as e:
         print(f"Gagal memperbarui koneksi Wi-Fi: {e}")
+        print(f"Output: {e.output}")
 
 def print_wifi_qr_in_terminal(ssid, password, hidden=False):
     wifi_format = f"WIFI:T:WPA;S:{ssid};P:{password};H:{str(hidden).lower()};;"
@@ -154,9 +170,9 @@ def print_wifi_qr_in_terminal(ssid, password, hidden=False):
 if __name__ == "__main__":
     while True:
         username = "admin"  # Ganti dengan username Anda
-        password = "admin"  # Ganti dengan password Anda
+        password = "20112005"  # Ganti dengan password Anda
 
-        captcha_code = get_captcha_text();
+        captcha_code = get_captcha_text()
         if captcha_code:
             login_to_router(username, password, captcha_code)
 
@@ -164,7 +180,6 @@ if __name__ == "__main__":
         if change_wifi_password(new_password):
             reboot_router()  # Restart router setelah password diubah
             update_wifi_connection(new_password)  # Hubungkan ke Wi-Fi baru
-
 
             # Buat QR Code
             print_wifi_qr_in_terminal(SSID, new_password)
